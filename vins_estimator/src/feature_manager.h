@@ -15,6 +15,11 @@ using namespace Eigen;
 
 #include "parameters.h"
 
+/**
+ * @description: 特征类
+ * @param {type} 
+ * @return: 
+ */
 class FeaturePerFrame
 {
   public:
@@ -41,13 +46,20 @@ class FeaturePerFrame
     double dep_gradient;
 };
 
+/**
+ * @description: 某feature_id下的所有FeaturePerFrame，拥有某一个ID的特征的帧集合
+ * @param {type} 
+ * @return: 
+ */
 class FeaturePerId
 {
   public:
     const int feature_id;
+    //特征点起始帧号
     int start_frame;
     vector<FeaturePerFrame> feature_per_frame;
 
+    //QUES:这个代表什么意思
     int used_num;
     bool is_outlier;
     bool is_margin;
@@ -55,7 +67,7 @@ class FeaturePerId
     int solve_flag; // 0 haven't solve yet; 1 solve succ; 2 solve fail;
 
     Vector3d gt_p;
-
+    //以feature_id为索引，并保存了出现该角点的第一帧的id
     FeaturePerId(int _feature_id, int _start_frame)
         : feature_id(_feature_id), start_frame(_start_frame),
           used_num(0), estimated_depth(-1.0), solve_flag(0)
@@ -90,6 +102,8 @@ class FeatureManager
     void removeBack();
     void removeFront(int frame_count);
     void removeOutlier();
+
+    // 通过FeatureManager可以得到滑动窗口内所有的角点信息
     list<FeaturePerId> feature;
     int last_track_num;
 
