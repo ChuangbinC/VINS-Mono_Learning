@@ -27,6 +27,7 @@ bool init_pub = 0;
 
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
+    //判断是否是第一帧
     if(first_image_flag)
     {
         first_image_flag = false;
@@ -34,6 +35,8 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         last_image_time = img_msg->header.stamp.toSec();
         return;
     }
+
+    //判断时间间隔是否正确，有问题则restart
     // detect unstable camera stream
     if (img_msg->header.stamp.toSec() - last_image_time > 1.0 || img_msg->header.stamp.toSec() < last_image_time)
     {
@@ -47,7 +50,11 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         return;
     }
     last_image_time = img_msg->header.stamp.toSec();
+
     // frequency control
+    //发布频率控制，并不是每读入一帧图像，就要发布特征点，通过判断间隔时间内的发布次数
+    //（不发布的时候也是会执行readImage() 读取图像进行处理）
+    //QUES: 这里设置了发布频率，不仅仅是rviz的会受影响，连传给后端也会影响
     if (round(1.0 * pub_count / (img_msg->header.stamp.toSec() - first_image_time)) <= FREQ)
     {
         PUB_THIS_FRAME = true;
@@ -99,7 +106,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         trackerData[i].showUndistortion("undistrotion_" + std::to_string(i));
 #endif
     }
-
+    //更新点的全局ID，上面的ReadImg中，所有点的ID都赋值为-1，需要在这里更新
     for (unsigned int i = 0;; i++)
     {
         bool completed = false;
@@ -110,6 +117,9 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             break;
     }
 
+    //如果PUB_THIS_FRAME=1则进行发布,包括后端和rviz显示的两个publish
+    //将特征点id，矫正后归一化平面的3D点(x,y,z=1)，像素2D点(u,v)，像素的速度(vx,vy)，封装成sensor_msgs::PointCloudPtr类型的feature_points实例中,发布到pub_img;
+    //将图像封装到cv_bridge::cvtColor类型的ptr实例中发布到pub_match
    if (PUB_THIS_FRAME)
    {
         pub_count++;
@@ -213,6 +223,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < NUM_OF_CAM; i++)
         trackerData[i].readIntrinsicParameter(CAM_NAMES[i]);
 
+    //判断是否加入鱼眼mask来去除边缘噪声
     if(FISHEYE)
     {
         for (int i = 0; i < NUM_OF_CAM; i++)
@@ -228,8 +239,11 @@ int main(int argc, char **argv)
         }
     }
 
+    //订阅话题IMAGE_TOPIC(如/cam0/image_raw)，执行回调函数img_callback
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
 
+    //发布feature，实例feature_points，跟踪的特征点，给后端优化用
+    //发布feature_img，实例ptr，跟踪的特征点图，给RVIZ用和调试用
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
     pub_match = n.advertise<sensor_msgs::Image>("feature_img",1000);
     pub_restart = n.advertise<std_msgs::Bool>("restart",1000);

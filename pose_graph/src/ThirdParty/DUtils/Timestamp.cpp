@@ -58,7 +58,6 @@ void Timestamp::setToCurrentTime(){
 #ifdef WIN32
 	struct __timeb32 timebuffer;
 	_ftime32_s( &timebuffer ); // C4996
-	// Note: _ftime is deprecated; consider using _ftime_s instead
 	m_secs = timebuffer.time;
 	m_usecs = timebuffer.millitm * 1000;
 #else

@@ -955,7 +955,6 @@ void TemplatedVocabulary<TDescriptor,F>::setNodeWeights
   {
     // IDF and TF-IDF: we calculte the idf path now
 
-    // Note: this actually calculates the idf part of the tf-idf score.
     // The complete tf-idf score is calculated in ::transform
 
     std::vector<unsigned int> Ni(NWords, 0);
