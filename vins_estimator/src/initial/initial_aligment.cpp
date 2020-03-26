@@ -242,16 +242,19 @@ bool LinearAlignment(map<double, ImageFrame> &all_image_frame, Vector3d &g, Vect
     x = A.ldlt().solve(b);
     double s = x(n_state - 1) / 100.0;
     ROS_DEBUG("estimated scale: %f", s);
+    // 取求解出来的g，这里的g应该是在c0坐标系上的
+    // 由于最后一个变量为s，g有三个变量，因此从倒数第4个开始取
     g = x.segment<3>(n_state - 4);
     ROS_DEBUG_STREAM(" result g     " << g.norm() << " " << g.transpose());
     if(fabs(g.norm() - G.norm()) > 1.0 || s < 0)
     {
         return false;
     }
-    //重力细化
+    //重力细化，重力细化过程中又重复上面的求解最小二乘，不过里面的参数会有变化
     RefineGravity(all_image_frame, g, x);
-    // 
+    // 这个应该是将s恢复成米制单位
     s = (x.tail<1>())(0) / 100.0;
+    // x中最后一个变量为s
     (x.tail<1>())(0) = s;
     ROS_DEBUG_STREAM(" refine     " << g.norm() << " " << g.transpose());
     if(s < 0.0 )
