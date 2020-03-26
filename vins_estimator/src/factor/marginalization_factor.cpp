@@ -1,5 +1,10 @@
 #include "marginalization_factor.h"
 
+/**
+ * @description: 调用costfunction中的Evaluation计算，获得雅可比和残差
+ * @param {type} 
+ * @return: 
+ */
 void ResidualBlockInfo::Evaluate()
 {
     residuals.resize(cost_function->num_residuals());
@@ -14,6 +19,7 @@ void ResidualBlockInfo::Evaluate()
         raw_jacobians[i] = jacobians[i].data();
         //dim += block_sizes[i] == 7 ? 6 : block_sizes[i];
     }
+    // 计算残差和Jacobain矩阵
     cost_function->Evaluate(parameter_blocks.data(), residuals.data(), raw_jacobians);
 
     //std::vector<int> tmp_idx(block_sizes.size());
@@ -86,11 +92,18 @@ MarginalizationInfo::~MarginalizationInfo()
     }
 }
 
+/**
+ * @description: 添加残差块相关信息（优化变量，待边缘化变量）
+ * @param {type} 
+ * @return: 
+ */
 void MarginalizationInfo::addResidualBlockInfo(ResidualBlockInfo *residual_block_info)
 {
+    //添加观测项
     factors.emplace_back(residual_block_info);
 
     std::vector<double *> &parameter_blocks = residual_block_info->parameter_blocks;
+    //QUES:还没弄懂他是如何获得size
     std::vector<int> parameter_block_sizes = residual_block_info->cost_function->parameter_block_sizes();
 
     for (int i = 0; i < static_cast<int>(residual_block_info->parameter_blocks.size()); i++)
@@ -100,13 +113,22 @@ void MarginalizationInfo::addResidualBlockInfo(ResidualBlockInfo *residual_block
         parameter_block_size[reinterpret_cast<long>(addr)] = size;
     }
 
+
+    //QUES: 这里直接置零是表示直接丢弃吗？
     for (int i = 0; i < static_cast<int>(residual_block_info->drop_set.size()); i++)
     {
+        
         double *addr = parameter_blocks[residual_block_info->drop_set[i]];
+        // id设置为0？
         parameter_block_idx[reinterpret_cast<long>(addr)] = 0;
     }
 }
 
+/**
+ * @description: 计算每个残差，对应的Jacobian，并更新parameter_block_data
+ * @param {type} 
+ * @return: 
+ */
 void MarginalizationInfo::preMarginalize()
 {
     for (auto it : factors)
@@ -171,6 +193,12 @@ void* ThreadsConstructA(void* threadsstruct)
     return threadsstruct;
 }
 
+/**
+ * @description: 多线程构造先验项舒尔补AX=b的结构，在X0处线性化计算Jacobian和残差
+ * pos为所有变量维度，m为需要marg掉的变量，n为需要保留的变量
+ * @param {type} 
+ * @return: 
+ */
 void MarginalizationInfo::marginalize()
 {
     int pos = 0;
@@ -263,7 +291,6 @@ void MarginalizationInfo::marginalize()
     //ROS_INFO("A diff %f , b diff %f ", (A - tmp_A).sum(), (b - tmp_b).sum());
 
 
-    //TODO
     Eigen::MatrixXd Amm = 0.5 * (A.block(0, 0, m, m) + A.block(0, 0, m, m).transpose());
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes(Amm);
 
@@ -284,6 +311,7 @@ void MarginalizationInfo::marginalize()
     Eigen::VectorXd S = Eigen::VectorXd((saes2.eigenvalues().array() > eps).select(saes2.eigenvalues().array(), 0));
     Eigen::VectorXd S_inv = Eigen::VectorXd((saes2.eigenvalues().array() > eps).select(saes2.eigenvalues().array().inverse(), 0));
 
+    //cwiseSqrt 元素级开方
     Eigen::VectorXd S_sqrt = S.cwiseSqrt();
     Eigen::VectorXd S_inv_sqrt = S_inv.cwiseSqrt();
 

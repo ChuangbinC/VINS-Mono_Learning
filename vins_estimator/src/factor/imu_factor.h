@@ -1,3 +1,12 @@
+/*
+ * @Author: Chuangbin Chen
+ * @Date: 2020-03-22 22:19:32
+ * @LastEditTime: 2020-03-25 11:45:06
+ * @LastEditors: Do not edit
+ * @Description: IMU残差、雅可比
+ */
+
+
 #pragma once
 #include <ros/assert.h>
 #include <iostream>
@@ -16,6 +25,14 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
     IMUFactor(IntegrationBase* _pre_integration):pre_integration(_pre_integration)
     {
     }
+    
+    /**
+     * @description: 这个与崔华坤的代码解析第11页相对应
+     * 对于 Evaluate 输入 double const *const *parameters, parameters[0], parameters[1], parameters[2],
+     * parameters[3]分别对应 4 个输入参数, 它们的长度依次是 7,9,7,9，分别对应 4 个优化变量的参数块。
+     * @param {type} 
+     * @return: 
+     */
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const
     {
 
@@ -56,17 +73,24 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
             pre_integration->repropagate(Bai, Bgi);
         }
 #endif
-
+        // alpha theta beta ba bg 5*3=15
         Eigen::Map<Eigen::Matrix<double, 15, 1>> residual(residuals);
         residual = pre_integration->evaluate(Pi, Qi, Vi, Bai, Bgi,
                                             Pj, Qj, Vj, Baj, Bgj);
-
+        
+        // LLT分解，residual 还需乘以信息矩阵的sqrt_info
+        // 因为优化函数其实是d=r^T P^-1 r ，P表示协方差，而ceres只接受最小二乘优化，即^Tr形式
+        // 因此需要把P^-1做LLT分解，使d=(L^T r)^T (L^T r) = r'^T r
         Eigen::Matrix<double, 15, 15> sqrt_info = Eigen::LLT<Eigen::Matrix<double, 15, 15>>(pre_integration->covariance.inverse()).matrixL().transpose();
-        //sqrt_info.setIdentity();
+        //相当于不加权重
+        //sqrt_info.setIdentity() 
+        //QUES: 为什么不是-JWr，少一个负号
+        
         residual = sqrt_info * residual;
 
         if (jacobians)
         {
+            // 获取预积分的误差递推函数中pqv关于ba、bg的Jacobian
             double sum_dt = pre_integration->sum_dt;
             Eigen::Matrix3d dp_dba = pre_integration->jacobian.template block<3, 3>(O_P, O_BA);
             Eigen::Matrix3d dp_dbg = pre_integration->jacobian.template block<3, 3>(O_P, O_BG);
@@ -83,6 +107,7 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
 ///                ROS_BREAK();
             }
 
+            // 残差关于第i帧的IMU位姿 pbi、qbi的雅可比，参考附录 10.4
             if (jacobians[0])
             {
                 Eigen::Map<Eigen::Matrix<double, 15, 7, Eigen::RowMajor>> jacobian_pose_i(jacobians[0]);
@@ -109,6 +134,8 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
                     //ROS_BREAK();
                 }
             }
+
+            // 残差关于第i帧的IMU位姿vbi、bai、bgi的雅可比，参考附录 10.5
             if (jacobians[1])
             {
                 Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor>> jacobian_speedbias_i(jacobians[1]);
@@ -138,6 +165,8 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
                 //ROS_ASSERT(fabs(jacobian_speedbias_i.maxCoeff()) < 1e8);
                 //ROS_ASSERT(fabs(jacobian_speedbias_i.minCoeff()) < 1e8);
             }
+
+            // 残差关于第j(i+1)帧的IMU位姿pbj、qbj的雅可比，参考附录 10.6
             if (jacobians[2])
             {
                 Eigen::Map<Eigen::Matrix<double, 15, 7, Eigen::RowMajor>> jacobian_pose_j(jacobians[2]);
@@ -157,6 +186,8 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
                 //ROS_ASSERT(fabs(jacobian_pose_j.maxCoeff()) < 1e8);
                 //ROS_ASSERT(fabs(jacobian_pose_j.minCoeff()) < 1e8);
             }
+
+            // 残差关于第j(i+1)帧的IMU位姿vbj、baj、bgj的雅可比，参考附录 10.7
             if (jacobians[3])
             {
                 Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor>> jacobian_speedbias_j(jacobians[3]);

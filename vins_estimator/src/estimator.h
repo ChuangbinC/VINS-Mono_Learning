@@ -22,7 +22,11 @@
 #include <queue>
 #include <opencv2/core/eigen.hpp>
 
-
+/**
+ * @description: IMU预积分，图像IMU融合的初始化和状态估计，重定位
+ * @param {type} 
+ * @return: 
+ */
 class Estimator
 {
   public:
@@ -71,6 +75,7 @@ class Estimator
     Matrix3d ric[NUM_OF_CAM];
     Vector3d tic[NUM_OF_CAM];
 
+    //窗口中的[P,V,R,Ba,Bg]
     Vector3d Ps[(WINDOW_SIZE + 1)];
     Vector3d Vs[(WINDOW_SIZE + 1)];
     Matrix3d Rs[(WINDOW_SIZE + 1)];
@@ -85,6 +90,7 @@ class Estimator
     IntegrationBase *pre_integrations[(WINDOW_SIZE + 1)];
     Vector3d acc_0, gyr_0;
 
+    //窗口中的dt,a,v
     vector<double> dt_buf[(WINDOW_SIZE + 1)];
     vector<Vector3d> linear_acceleration_buf[(WINDOW_SIZE + 1)];
     vector<Vector3d> angular_velocity_buf[(WINDOW_SIZE + 1)];
@@ -119,10 +125,13 @@ class Estimator
     MarginalizationInfo *last_marginalization_info;
     vector<double *> last_marginalization_parameter_blocks;
 
+    //kay是时间戳，val是图像帧
+    //图像帧中保存了图像帧的特征点、时间戳、位姿Rt，预积分对象pre_integration，是否是关键帧。
     map<double, ImageFrame> all_image_frame;
     IntegrationBase *tmp_pre_integration;
 
     //relocalization variable
+    //重定位所需的变量
     bool relocalization_info;
     double relo_frame_stamp;
     double relo_frame_index;

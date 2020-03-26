@@ -1,3 +1,10 @@
+/*
+ * @Author: Chuangbin Chen
+ * @Date: 2020-03-22 22:19:32
+ * @LastEditTime: 2020-03-25 14:54:52
+ * @LastEditors: Do not edit
+ * @Description: IMU预积分类
+ */
 #pragma once
 
 #include "../utility/utility.h"
@@ -5,6 +12,7 @@
 
 #include <ceres/ceres.h>
 using namespace Eigen;
+
 
 class IntegrationBase
 {
@@ -27,6 +35,11 @@ class IntegrationBase
         noise.block<3, 3>(15, 15) =  (GYR_W * GYR_W) * Eigen::Matrix3d::Identity();
     }
 
+    /**
+     * @description: 两帧之间 PVQ 增量的中值法离散形式
+     * @param {type} 
+     * @return: 
+     */
     void push_back(double dt, const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr)
     {
         dt_buf.push_back(dt);
@@ -35,6 +48,11 @@ class IntegrationBase
         propagate(dt, acc, gyr);
     }
 
+    /**
+     * @description: 优化过程中Bias会更新，需要根据新的bias重新计算预积分，对应初始化中的陀螺仪校正
+     * @param {type} 
+     * @return: 
+     */
     void repropagate(const Eigen::Vector3d &_linearized_ba, const Eigen::Vector3d &_linearized_bg)
     {
         sum_dt = 0.0;
@@ -51,6 +69,12 @@ class IntegrationBase
             propagate(dt_buf[i], acc_buf[i], gyr_buf[i]);
     }
 
+    /**
+     * @description: IMU预积分中采用中值积分递推Jacobian和Covariance，构造误差的线性化递推方程，参考 2.7 离散形式的 PVQ 增量误差分析
+     * 得到Jacobian和Covariance递推公式-> Paper 式9、10、11
+     * @param {type} 
+     * @return: 
+     */
     void midPointIntegration(double _dt, 
                             const Eigen::Vector3d &_acc_0, const Eigen::Vector3d &_gyr_0,
                             const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1,
@@ -77,6 +101,7 @@ class IntegrationBase
             Vector3d a_1_x = _acc_1 - linearized_ba;
             Matrix3d R_w_x, R_a_0_x, R_a_1_x;
 
+            //反对称矩阵
             R_w_x<<0, -w_x(2), w_x(1),
                 w_x(2), 0, -w_x(0),
                 -w_x(1), w_x(0), 0;
@@ -86,7 +111,8 @@ class IntegrationBase
             R_a_1_x<<0, -a_1_x(2), a_1_x(1),
                 a_1_x(2), 0, -a_1_x(0),
                 -a_1_x(1), a_1_x(0), 0;
-
+            
+            //参考 2.7 离散形式的 PVQ 增量误差分析
             MatrixXd F = MatrixXd::Zero(15, 15);
             F.block<3, 3>(0, 0) = Matrix3d::Identity();
             F.block<3, 3>(0, 3) = -0.25 * delta_q.toRotationMatrix() * R_a_0_x * _dt * _dt + 
@@ -105,6 +131,7 @@ class IntegrationBase
             F.block<3, 3>(12, 12) = Matrix3d::Identity();
             //cout<<"A"<<endl<<A<<endl;
 
+            // 参考 2.7 离散形式的 PVQ 增量误差分析
             MatrixXd V = MatrixXd::Zero(15,18);
             V.block<3, 3>(0, 0) =  0.25 * delta_q.toRotationMatrix() * _dt * _dt;
             V.block<3, 3>(0, 3) =  0.25 * -result_delta_q.toRotationMatrix() * R_a_1_x  * _dt * _dt * 0.5 * _dt;
@@ -127,6 +154,15 @@ class IntegrationBase
 
     }
 
+    /**
+     * @description: IMU预积分传播方程
+     *               积分计算两个关键帧之间IMU测量的变化量： 
+     *               旋转delta_q 速度delta_v 位移delta_p
+     *               加速度的biaslinearized_ba 陀螺仪的Bias linearized_bg
+     *               同时维护更新预积分的Jacobian和Covariance,计算优化时必要的参数
+     * @param {type}
+     * @return: 
+     */
     void propagate(double _dt, const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1)
     {
         dt = _dt;
@@ -138,6 +174,7 @@ class IntegrationBase
         Vector3d result_linearized_ba;
         Vector3d result_linearized_bg;
 
+        // 中值积分
         midPointIntegration(_dt, acc_0, gyr_0, _acc_1, _gyr_1, delta_p, delta_q, delta_v,
                             linearized_ba, linearized_bg,
                             result_delta_p, result_delta_q, result_delta_v,
@@ -157,11 +194,17 @@ class IntegrationBase
      
     }
 
+    /**
+     * @description: 这个与崔华坤的代码解析第10页相对应
+     * @param {type} 
+     * @return: 
+     */
     Eigen::Matrix<double, 15, 1> evaluate(const Eigen::Vector3d &Pi, const Eigen::Quaterniond &Qi, const Eigen::Vector3d &Vi, const Eigen::Vector3d &Bai, const Eigen::Vector3d &Bgi,
                                           const Eigen::Vector3d &Pj, const Eigen::Quaterniond &Qj, const Eigen::Vector3d &Vj, const Eigen::Vector3d &Baj, const Eigen::Vector3d &Bgj)
     {
         Eigen::Matrix<double, 15, 1> residuals;
-
+        // Block of size <p,q>, starting at (i,j)
+        // 状态变量关于Ba Bg的雅可比
         Eigen::Matrix3d dp_dba = jacobian.block<3, 3>(O_P, O_BA);
         Eigen::Matrix3d dp_dbg = jacobian.block<3, 3>(O_P, O_BG);
 
@@ -177,6 +220,7 @@ class IntegrationBase
         Eigen::Vector3d corrected_delta_v = delta_v + dv_dba * dba + dv_dbg * dbg;
         Eigen::Vector3d corrected_delta_p = delta_p + dp_dba * dba + dp_dbg * dbg;
 
+        // IMU残差计算
         residuals.block<3, 1>(O_P, 0) = Qi.inverse() * (0.5 * G * sum_dt * sum_dt + Pj - Pi - Vi * sum_dt) - corrected_delta_p;
         residuals.block<3, 1>(O_R, 0) = 2 * (corrected_delta_q.inverse() * (Qi.inverse() * Qj)).vec();
         residuals.block<3, 1>(O_V, 0) = Qi.inverse() * (G * sum_dt + Vj - Vi) - corrected_delta_v;

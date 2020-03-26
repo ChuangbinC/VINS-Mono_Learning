@@ -57,6 +57,7 @@ class FeaturePerId
     const int feature_id;
     //特征点起始帧号
     int start_frame;
+    //feature_per_frame是某个特征点的帧集合，每个路标点由多个连续的图像观测到
     vector<FeaturePerFrame> feature_per_frame;
 
     //QUES:这个代表什么意思
@@ -103,7 +104,7 @@ class FeatureManager
     void removeFront(int frame_count);
     void removeOutlier();
 
-    // 通过FeatureManager可以得到滑动窗口内所有的角点信息
+    // 滑窗内所有路标点
     list<FeaturePerId> feature;
     int last_track_num;
 

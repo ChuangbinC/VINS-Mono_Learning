@@ -78,13 +78,13 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
             return it.feature_id == feature_id;
                           });
 
-        //如果没有则新建一个，并添加这图像帧到feature队列
+        //如果没有则新建一个，并添加这特征到feature队列
         if (it == feature.end())
         {
             feature.push_back(FeaturePerId(feature_id, frame_count));
             feature.back().feature_per_frame.push_back(f_per_fra);
         }
-        //有的话把图像帧添加进去，添加到对应 id 的 FeaturePerFrame 队列。
+        //有的话把特征添加进去，添加到对应 id 的 FeaturePerFrame 队列。
         else if (it->feature_id == feature_id)
         {
             it->feature_per_frame.push_back(f_per_fra);
@@ -420,7 +420,7 @@ void FeatureManager::removeFront(int frame_count)
     for (auto it = feature.begin(), it_next = feature.begin(); it != feature.end(); it = it_next)
     {
         it_next++;
-        //起始帧为最新帧的滑动成次新帧
+        //起始帧的最新帧，滑动成次新帧
         if (it->start_frame == frame_count)
         {
             it->start_frame--;
@@ -429,8 +429,11 @@ void FeatureManager::removeFront(int frame_count)
         {
             int j = WINDOW_SIZE - 1 - it->start_frame;
             //如果次新帧之前已经跟踪结束则什么都不做
+            //QUES:为什么这样就表示跟踪结束
             if (it->endFrame() < frame_count - 1)
                 continue;
+            
+            
             //如果在次新帧仍被跟踪，则删除feature_per_frame中次新帧对应的FeaturePerFrame
             //如果feature_per_frame为空则直接删除特征点
             it->feature_per_frame.erase(it->feature_per_frame.begin() + j);
