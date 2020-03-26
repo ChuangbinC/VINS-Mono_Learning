@@ -399,6 +399,8 @@ bool Estimator::visualInitialAlign()
     double s = (x.tail<1>())(0);
     for (int i = 0; i <= WINDOW_SIZE; i++)
     {
+        // 陀螺仪bias初始化优化后需要重新计算
+        //QUES:前面的bias初始化中已经进行一次repropagatewe，为啥这里还有一次
         pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
     }
     for (int i = frame_count; i >= 0; i--)

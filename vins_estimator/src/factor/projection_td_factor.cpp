@@ -179,6 +179,8 @@ void ProjectionTdFactor::check(double **parameters)
     double td = parameters[4][0];
 
     Eigen::Vector3d pts_i_td, pts_j_td;
+    //pts_i_td 处理时间同步误差和Rolling shutter时间后，角点在归一化平面的坐标。
+    //TR / ROW * row_i就是相机 rolling 到这一行时所用的时间
     pts_i_td = pts_i - (td - td_i + TR / ROW * row_i) * velocity_i;
     pts_j_td = pts_j - (td - td_j + TR / ROW * row_j) * velocity_j;
     Eigen::Vector3d pts_camera_i = pts_i_td / inv_dep_i;

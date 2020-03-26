@@ -1,3 +1,10 @@
+/*
+ * @Author: Chuangbin Chen
+ * @Date: 2020-03-22 22:19:32
+ * @LastEditTime: 2020-03-26 17:06:35
+ * @LastEditors: Do not edit
+ * @Description: 
+ */
 #pragma once 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
@@ -15,10 +22,10 @@ using namespace std;
 
 struct SFMFeature
 {
-    bool state;
+    bool state;//特征点的状态（是否被三角化）
     int id;
-    vector<pair<int,Vector2d>> observation;
-    double position[3];
+    vector<pair<int,Vector2d>> observation;//所有观测到该特征点的图像帧ID和图像坐标
+    double position[3];//3d坐标
     double depth;
 };
 
@@ -29,6 +36,7 @@ struct ReprojectionError3D
 		{}
 
 	template <typename T>
+	// 计算重投影残差
 	bool operator()(const T* const camera_R, const T* const camera_T, const T* point, T* residuals) const
 	{
 		T p[3];

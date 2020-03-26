@@ -3,6 +3,8 @@ VINS-Mono代码注释学习
 
 
 本注释参考了[Manii的博客以及代码注释](https://blog.csdn.net/qq_41839222/article/details/85793998)和 崔华坤大神的《VINS 论文推导及代码解析》
+
+
 ---------
 
 # VINS-Mono
