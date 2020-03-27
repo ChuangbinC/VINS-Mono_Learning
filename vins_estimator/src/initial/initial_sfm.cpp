@@ -151,7 +151,9 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 	//cout << "set 0 and " << l << " as known " << endl;
 	// have relative_r relative_t
 	// intial two view
-	//假设第l帧为原点，根据当前帧到第l帧的relative_R，relative_T，得到当前帧位姿
+	
+	//假设第l帧为原点(参考坐标系)，根据当前帧到第l帧的relative_R，relative_T，
+	//得到当前帧在参考坐标系下的位姿，之后的pose[i]表示第l帧到第i帧的变换矩阵[R|T]
 	q[l].w() = 1;
 	q[l].x() = 0;
 	q[l].y() = 0;

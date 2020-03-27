@@ -19,7 +19,11 @@ using namespace Eigen;
 using namespace std;
 using namespace DVision;
 
-
+/**
+ * @description: 通过Brief模板文件，对图像的关键点计算Brief描述子
+ * @param {type} 
+ * @return: 
+ */
 class BriefExtractor
 {
 public:
@@ -29,6 +33,11 @@ public:
   DVision::BRIEF m_brief;
 };
 
+/**
+ * @description: 构建关键帧，通过BRIEF描述子匹配关键帧和回环候选帧
+ * @param {type} 
+ * @return: 
+ */
 class KeyFrame
 {
 public:

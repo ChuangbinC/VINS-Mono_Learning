@@ -1,7 +1,7 @@
 /*
  * @Author: Chuangbin Chen
  * @Date: 2020-03-22 22:19:32
- * @LastEditTime: 2020-03-26 23:53:47
+ * @LastEditTime: 2020-03-27 10:31:15
  * @LastEditors: Do not edit
  * @Description: 
  */
@@ -246,6 +246,7 @@ bool LinearAlignment(map<double, ImageFrame> &all_image_frame, Vector3d &g, Vect
     // 由于最后一个变量为s，g有三个变量，因此从倒数第4个开始取
     g = x.segment<3>(n_state - 4);
     ROS_DEBUG_STREAM(" result g     " << g.norm() << " " << g.transpose());
+    //如果重力加速度与参考值差太大或者尺度为负则说明计算错误
     if(fabs(g.norm() - G.norm()) > 1.0 || s < 0)
     {
         return false;
