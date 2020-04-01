@@ -1,7 +1,7 @@
 /*
  * @Author: Chuangbin Chen
  * @Date: 2020-03-22 22:19:32
- * @LastEditTime: 2020-03-25 11:45:06
+ * @LastEditTime: 2020-03-30 13:36:17
  * @LastEditors: Do not edit
  * @Description: IMU残差、雅可比
  */
@@ -75,6 +75,8 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
 #endif
         // alpha theta beta ba bg 5*3=15
         Eigen::Map<Eigen::Matrix<double, 15, 1>> residual(residuals);
+
+        // 获得IMU约束的残差
         residual = pre_integration->evaluate(Pi, Qi, Vi, Bai, Bgi,
                                             Pj, Qj, Vj, Baj, Bgj);
         

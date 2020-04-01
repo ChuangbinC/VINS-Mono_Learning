@@ -125,7 +125,7 @@ void MarginalizationInfo::addResidualBlockInfo(ResidualBlockInfo *residual_block
 }
 
 /**
- * @description: 计算每个残差，对应的Jacobian，并更新parameter_block_data
+ * @description: 计算每个残差对应的Jacobian，并更新parameter_block_data
  * @param {type} 
  * @return: 
  */

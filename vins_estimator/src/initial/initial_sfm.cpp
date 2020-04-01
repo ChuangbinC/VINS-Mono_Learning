@@ -136,7 +136,7 @@ void GlobalSFM::triangulateTwoFrames(int frame0, Eigen::Matrix<double, 3, 4> &Po
  * @param[in]   frame_num	窗口总帧数（frame_count + 1）
  * @param[out]  q 	窗口内图像帧的旋转四元数q（相对于第l帧）
  * @param[out]	T 	窗口内图像帧的平移向量T（相对于第l帧）
- * @param[in]  	l 	第l帧
+ * @param[in]  	l 	第l帧，参考帧
  * @param[in]  	relative_R	当前帧到第l帧的旋转矩阵
  * @param[in]  	relative_T 	当前帧到第l帧的平移向量
  * @param[in]  	sfm_f		所有特征点
@@ -159,6 +159,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 	q[l].y() = 0;
 	q[l].z() = 0;
 	T[l].setZero();
+	// 当前帧的位姿
 	q[frame_num - 1] = q[l] * Quaterniond(relative_R);
 	T[frame_num - 1] = relative_T;
 	//cout << "init q_l " << q[l].w() << " " << q[l].vec().transpose() << endl;
@@ -188,8 +189,6 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 	//1: trangulate between l ----- frame_num - 1
 	//2: solve pnp l + 1; trangulate l + 1 ------- frame_num - 1; 
 	//1、先三角化第l帧（参考帧）与第frame_num-1帧（当前帧）的路标点
-	//2、pnp求解从第l+1开始的每一帧到第l帧的变换矩阵R_initial, P_initial，保存在Pose中
-	//并与当前帧进行三角化
 	for (int i = l; i < frame_num - 1 ; i++)
 	{
 		// solve pnp
@@ -207,6 +206,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 		}
 
 		// triangulate point based on the solve pnp result
+		// 2、pnp求解从第l+1开始的每一帧到第l帧的变换矩阵R_initial, P_initial，保存在Pose中,并与当前帧进行三角化
 		triangulateTwoFrames(i, Pose[i], frame_num - 1, Pose[frame_num - 1], sfm_f);
 	}
 	//3: triangulate l-----l+1 l+2 ... frame_num -2

@@ -1,7 +1,7 @@
 /*
  * @Author: Chuangbin Chen
  * @Date: 2020-03-22 22:19:32
- * @LastEditTime: 2020-03-25 14:54:52
+ * @LastEditTime: 2020-03-30 14:00:09
  * @LastEditors: Do not edit
  * @Description: IMU预积分类
  */
@@ -195,7 +195,8 @@ class IntegrationBase
     }
 
     /**
-     * @description: 这个与崔华坤的代码解析第10页相对应
+     * @description: 求解IMU的残差，只在imu_factor里面用到，
+     * 
      * @param {type} 
      * @return: 
      */
@@ -215,7 +216,8 @@ class IntegrationBase
 
         Eigen::Vector3d dba = Bai - linearized_ba;
         Eigen::Vector3d dbg = Bgi - linearized_bg;
-
+        // 用关于bias的一阶近似代替重新积分，在bias发生微小变化时
+        // 这个一阶近似只在求解IMU的残差时才使用，IMU的bias校正时，还是使用重新传播
         Eigen::Quaterniond corrected_delta_q = delta_q * Utility::deltaQ(dq_dbg * dbg);
         Eigen::Vector3d corrected_delta_v = delta_v + dv_dba * dba + dv_dbg * dbg;
         Eigen::Vector3d corrected_delta_p = delta_p + dp_dba * dba + dp_dbg * dbg;

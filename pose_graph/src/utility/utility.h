@@ -84,6 +84,11 @@ class Utility
         return ypr / M_PI * 180.0;
     }
 
+    /**
+     * @description: 欧拉角转旋转矩阵
+     * @param {type} 
+     * @return: 
+     */
     template <typename Derived>
     static Eigen::Matrix<typename Derived::Scalar, 3, 3> ypr2R(const Eigen::MatrixBase<Derived> &ypr)
     {

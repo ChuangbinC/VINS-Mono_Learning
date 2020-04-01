@@ -9,7 +9,7 @@ InitialEXRotation::InitialEXRotation(){
 }
 
 /**
- * @description: 标定外参的旋转矩阵
+ * @description: 标定外参的旋转矩阵，没有获得平移向量
  * @param {type} 
  * @return: 
  */
