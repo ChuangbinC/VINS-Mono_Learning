@@ -390,6 +390,7 @@ bool MarginalizationFactor::Evaluate(double const *const *parameters, double *re
         }
     }
     Eigen::Map<Eigen::VectorXd>(residuals, n) = marginalization_info->linearized_residuals + marginalization_info->linearized_jacobians * dx;
+    // jacobians 为空表示只需要计算残差，不需要计算雅可比，当只计算cost时才会这样。
     if (jacobians)
     {
 

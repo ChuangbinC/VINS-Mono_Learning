@@ -12,6 +12,8 @@ FeatureManager::FeatureManager(Matrix3d _Rs[])
         ric[i].setIdentity();
 }
 
+
+
 void FeatureManager::setRic(Matrix3d _ric[])
 {
     for (int i = 0; i < NUM_OF_CAM; i++)
@@ -40,7 +42,7 @@ int FeatureManager::getFeatureCount()
     int cnt = 0;
     for (auto &it : feature)
     {
-        
+
         it.used_num = it.feature_per_frame.size();
 
         if (it.used_num >= 2 && it.start_frame < WINDOW_SIZE - 2)
@@ -52,12 +54,12 @@ int FeatureManager::getFeatureCount()
 }
 
 /**
- * @description: 把特征点放入feature的list容器中，计算每一个点跟踪次数和它在次新帧和次次新帧间的视差，决定是否将当前帧设置为关键帧
+ * @brief 把特征点放入feature的list容器中，计算每一个点跟踪次数和它在次新帧和次次新帧间的视差，决定是否将当前帧设置为关键帧
  * KF选择策略
  * @param {int} frame_count 窗口内帧的个数 
  * @param {typet} image 某帧所有特征点的[camera_id,[x,y,z,u,v,vx,vy]]s构成的map,索引为feature_id
  * @param {int} td IMU和cam同步时间差
- * @return: true：次新帧是关键帧;false：非关键帧
+ * @return true：次新帧是关键帧;false：非关键帧
  */
 bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, double td)
 {
@@ -73,10 +75,9 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
 
         int feature_id = id_pts.first;
         //迭代器寻找feature list中是否有这feature_id
-        auto it = find_if(feature.begin(), feature.end(), [feature_id](const FeaturePerId &it)
-                          {
+        auto it = find_if(feature.begin(), feature.end(), [feature_id](const FeaturePerId &it) {
             return it.feature_id == feature_id;
-                          });
+        });
 
         //如果没有则新建一个，并添加这特征到feature队列
         if (it == feature.end())
@@ -137,7 +138,7 @@ void FeatureManager::debugShow()
         {
             ROS_DEBUG("%d,", int(j.is_used));
             sum += j.is_used;
-            printf("(%lf,%lf) ",j.point(0), j.point(1));
+            printf("(%lf,%lf) ", j.point(0), j.point(1));
         }
         ROS_ASSERT(it.used_num == sum);
     }
@@ -162,7 +163,7 @@ vector<pair<Vector3d, Vector3d>> FeatureManager::getCorresponding(int frame_coun
             a = it.feature_per_frame[idx_l].point;
 
             b = it.feature_per_frame[idx_r].point;
-            
+
             corres.push_back(make_pair(a, b));
         }
     }
@@ -187,10 +188,10 @@ void FeatureManager::setDepth(const VectorXd &x)
         //ROS_INFO("feature id %d , start_frame %d, depth %f ", it_per_id->feature_id, it_per_id-> start_frame, it_per_id->estimated_depth);
         if (it_per_id.estimated_depth < 0)
         {
-            it_per_id.solve_flag = 2;//失败估计
+            it_per_id.solve_flag = 2; //失败估计
         }
         else
-            it_per_id.solve_flag = 1;//成功估计
+            it_per_id.solve_flag = 1; //成功估计
     }
 }
 
@@ -304,7 +305,6 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
         {
             it_per_id.estimated_depth = INIT_DEPTH;
         }
-
     }
 }
 
@@ -330,7 +330,6 @@ void FeatureManager::removeOutlier()
     }
 }
 
-
 /**
  * @description: 边缘化最老帧时，处理特征点保存的帧号，将起始帧是最老帧的特征点的深度值进行转移
  * marg_R、marg_P为被边缘化的位姿，new_R、new_P为在这下一帧的位姿
@@ -350,7 +349,7 @@ void FeatureManager::removeBackShiftDepth(Eigen::Matrix3d marg_R, Eigen::Vector3
         else
         {
             //特征点起始帧是最老帧
-            Eigen::Vector3d uv_i = it->feature_per_frame[0].point;  
+            Eigen::Vector3d uv_i = it->feature_per_frame[0].point;
             it->feature_per_frame.erase(it->feature_per_frame.begin());
             //特征点只在最老帧被观测则直接移除
             if (it->feature_per_frame.size() < 2)
@@ -403,7 +402,7 @@ void FeatureManager::removeBack()
         else
         {
             it->feature_per_frame.erase(it->feature_per_frame.begin());
-            
+
             if (it->feature_per_frame.size() == 0)
                 feature.erase(it);
         }
@@ -432,8 +431,7 @@ void FeatureManager::removeFront(int frame_count)
             //QUES:为什么这样就表示跟踪结束
             if (it->endFrame() < frame_count - 1)
                 continue;
-            
-            
+
             //如果在次新帧仍被跟踪，则删除feature_per_frame中次新帧对应的FeaturePerFrame
             //如果feature_per_frame为空则直接删除特征点
             it->feature_per_frame.erase(it->feature_per_frame.begin() + j);

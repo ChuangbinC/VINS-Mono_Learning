@@ -183,6 +183,8 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     //保存闭环轨迹到VINS_RESULT_PATH
     if (SAVE_LOOP_PATH)
     {
+        #ifndef EVO
+        // 原始代码
         ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
         loop_path_file.setf(ios::fixed, ios::floatfield);
         loop_path_file.precision(0);
@@ -197,6 +199,20 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
               << Q.z() << ","
               << endl;
         loop_path_file.close();
+        #else
+        ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+        loop_path_file.setf(ios::fixed, ios::floatfield);
+        loop_path_file.precision(0);
+        loop_path_file << cur_kf->time_stamp << " ";
+        loop_path_file.precision(5);
+        loop_path_file  << P.x() << " "
+                        << P.y() << " "
+                        << P.z() << " "
+                        << Q.x() << " "
+                        << Q.y() << " "
+                        << Q.z() << " "
+                        << Q.w() << endl;
+        #endif
     }
 
 
@@ -704,6 +720,8 @@ void PoseGraph::updatePath()
         //保存闭环轨迹到VINS_RESULT_PATH
         if (SAVE_LOOP_PATH)
         {
+            #ifndef EVO
+            // 原始代码
             ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
             loop_path_file.setf(ios::fixed, ios::floatfield);
             loop_path_file.precision(0);
@@ -718,6 +736,20 @@ void PoseGraph::updatePath()
                   << Q.z() << ","
                   << endl;
             loop_path_file.close();
+            #else
+            ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+            loop_path_file.setf(ios::fixed, ios::floatfield);
+            loop_path_file.precision(0);
+            loop_path_file << (*it)->time_stamp << " ";
+            loop_path_file.precision(5);
+            loop_path_file  << P.x() << " "
+                            << P.y() << " "
+                            << P.z() << " "
+                            << Q.x() << " "
+                            << Q.y() << " "
+                            << Q.z() << " "
+                            << Q.w() << endl;
+            #endif
         }
         //draw local connection
         if (SHOW_S_EDGE)

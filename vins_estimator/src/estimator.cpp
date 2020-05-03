@@ -1,7 +1,7 @@
 /*
  * @Author: Chuangbin Chen
  * @Date: 2020-03-22 22:19:32
- * @LastEditTime: 2020-04-01 13:43:12
+ * @LastEditTime: 2020-05-03 14:27:34
  * @LastEditors: Do not edit
  * @Description: 
  */
@@ -545,6 +545,8 @@ bool Estimator::visualInitialAlign()
     {
         // 4. 陀螺仪bias初始化优化后需要重新预积分
         //QUES:前面的bias初始化中已经进行一次repropagatewe，为啥这里还有一次
+        // cout << "Bgs["<< i << "] is " <<Bgs[i]<< endl;
+
         pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
     }
 
@@ -736,6 +738,8 @@ void Estimator::double2vector()
     // 前后的yaw误差来保持平滑，而其他两个角则直接使用优化后的结果，所以设置为0
     // https://github.com/HKUST-Aerial-Robotics/VINS-Mono/issues/18
     double y_diff = origin_R0.x() - origin_R00.x();
+    
+    
     //对滑窗内所有帧都进行 rot_diff 的校正
     Matrix3d rot_diff = Utility::ypr2R(Vector3d(y_diff, 0, 0));
     if (abs(abs(origin_R0.y()) - 90) < 1.0 || abs(abs(origin_R00.y()) - 90) < 1.0)
@@ -746,6 +750,7 @@ void Estimator::double2vector()
                                        para_Pose[0][4],
                                        para_Pose[0][5]).toRotationMatrix().transpose();
     }
+
 
     // 在后端滑动窗口的非线性优化时，我们并没有固定住第一帧的位姿不变，而是将其作为优化变量
     // 进行调整。但是，因为相机的偏航角 yaw 是不可观测的， 也就是说对于任意的 yaw 都满足
@@ -1390,7 +1395,7 @@ void Estimator::slideWindowOld()
 }
 
 /**
- * @description: 进行重定位
+ * @brief 进行重定位
  * @param[in]   _frame_stamp    重定位帧时间戳
  * @param[in]   _frame_index    重定位帧索引值
  * @param[in]   _match_points   重定位帧的所有匹配点

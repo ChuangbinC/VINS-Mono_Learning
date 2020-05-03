@@ -153,7 +153,8 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
         relo_path.poses.push_back(pose_stamped);
         pub_relo_path.publish(relo_path);
 
-        // write result to file
+        #ifndef EVO
+        // 原始代码
         ofstream foutC(VINS_RESULT_PATH, ios::app);
         foutC.setf(ios::fixed, ios::floatfield);
         foutC.precision(0);
@@ -170,6 +171,22 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
               << estimator.Vs[WINDOW_SIZE].y() << ","
               << estimator.Vs[WINDOW_SIZE].z() << "," << endl;
         foutC.close();
+        #else
+        // write result with tum format, for evo tools 修改为符合tum格式的代码，为了使用evo
+        ofstream foutC(VINS_RESULT_PATH, ios::app);
+        foutC.setf(ios::fixed, ios::floatfield);
+        foutC.precision(10);
+        foutC << header.stamp.toSec()<< " ";
+        foutC.precision(5);
+        foutC << estimator.Ps[WINDOW_SIZE].x() << " "
+              << estimator.Ps[WINDOW_SIZE].y() << " "
+              << estimator.Ps[WINDOW_SIZE].z() << " "
+              << tmp_Q.w() << " "
+              << tmp_Q.x() << " "
+              << tmp_Q.y() << " "
+              << tmp_Q.z() << endl;
+        foutC.close();
+        #endif
     }
 }
 

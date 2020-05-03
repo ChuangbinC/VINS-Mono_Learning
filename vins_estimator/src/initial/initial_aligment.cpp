@@ -1,7 +1,7 @@
 /*
  * @Author: Chuangbin Chen
  * @Date: 2020-03-22 22:19:32
- * @LastEditTime: 2020-03-27 10:31:15
+ * @LastEditTime: 2020-05-02 00:40:13
  * @LastEditors: Do not edit
  * @Description: 
  */
@@ -52,13 +52,13 @@ void solveGyroscopeBias(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs)
 
     for (int i = 0; i <= WINDOW_SIZE; i++)
         Bgs[i] += delta_bg;
-
+    int i=0;
     // 重新预积分
     for (frame_i = all_image_frame.begin(); next(frame_i) != all_image_frame.end( ); frame_i++)
     {
         frame_j = next(frame_i);
-        // 这里只利用到了bgs[0]
-        //QUES:后面的值不需要吗
+        // 为什么这里只利用到了bgs[0]，因为这里的bgs[i]都被初始化为同一个初始值 delta_bg
+        // cout << "Bgs["<< i << "] is " <<Bgs[i++]<< endl;
         frame_j->second.pre_integration->repropagate(Vector3d::Zero(), Bgs[0]);
     }
 }
@@ -253,7 +253,7 @@ bool LinearAlignment(map<double, ImageFrame> &all_image_frame, Vector3d &g, Vect
     }
     //重力细化，重力细化过程中又重复上面的求解最小二乘，不过里面的参数会有变化
     RefineGravity(all_image_frame, g, x);
-    // 这个应该是将s恢复成米制单位
+    // 这个是因为上面求解的时候除了100，算出的结果变大100倍，所以现在除以100变回原来结果
     s = (x.tail<1>())(0) / 100.0;
     // x中最后一个变量为s
     (x.tail<1>())(0) = s;

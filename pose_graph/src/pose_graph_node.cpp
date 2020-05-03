@@ -552,7 +552,11 @@ int main(int argc, char **argv)
         VISUALIZE_IMU_FORWARD = fsSettings["visualize_imu_forward"];
         LOAD_PREVIOUS_POSE_GRAPH = fsSettings["load_previous_pose_graph"];
         FAST_RELOCALIZATION = fsSettings["fast_relocalization"];
+        #ifdef EVO
+        VINS_RESULT_PATH = VINS_RESULT_PATH + "/vins_result_loop.txt";
+        #else
         VINS_RESULT_PATH = VINS_RESULT_PATH + "/vins_result_loop.csv";
+        #endif
         std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
         fout.close();
         fsSettings.release();
